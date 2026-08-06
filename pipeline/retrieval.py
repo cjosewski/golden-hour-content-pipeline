@@ -23,6 +23,25 @@ _HEADING_RE = re.compile(r"^(#{1,6})\s+(.*)$")
 # "march", "salt" survive as query/document terms.
 _TOKEN_RE = re.compile(r"[a-z0-9]+")
 
+# ---------------------------------------------------------------------------
+# Retrieval tweak (2026-08-05), measured, not guessed: a dry run over all 15
+# requests showed 35% of retrieved chunk slots were document-management
+# metadata rather than game content. Every GDD here follows the same section
+# template, and two of its sections carry no authorable content at all:
+#   "Cross-References" — a doc-to-doc reference grid ("this doc references
+#       that doc"), which scores highly because it is dense with system nouns.
+#   "Build Agents"     — which agent/crew builds the system; project
+#       management, not game lore.
+# Both were crowding out the sections that actually describe how a casualty
+# looks and sounds, so they are excluded at index time. Every other section —
+# including "Dependencies", which does encode real cross-system rules — is
+# retained. Excluding at chunk time (rather than filtering results) keeps BM25's
+# corpus statistics honest: these sections never enter the index at all.
+# ---------------------------------------------------------------------------
+NON_CONTENT_HEADINGS: frozenset[str] = frozenset(
+    {"cross-references", "build agents"}
+)
+
 
 def _tokenize(text: str) -> list[str]:
     return _TOKEN_RE.findall(text.lower())
@@ -65,6 +84,9 @@ def chunk_markdown(source_doc: str, content: str) -> list[Chunk]:
         body = "\n".join(current_lines).strip()
         # Skip empty sections (e.g. a heading immediately followed by another).
         if not body:
+            return
+        # Skip document-management sections — see NON_CONTENT_HEADINGS.
+        if current_heading.strip().lower() in NON_CONTENT_HEADINGS:
             return
         indexed_text = f"{current_heading}\n{body}"
         chunks.append(
