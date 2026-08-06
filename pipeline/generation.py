@@ -137,12 +137,17 @@ def critique_item(
     draft: dict,
 ) -> CriticVerdict:
     """Run the critic over a draft; return its verdict (with corrected item)."""
+    item_model: type[BaseModel] = CONTENT_MODELS[content_type]
     prompt = prompts.build_critic_prompt(
         content_title=content_title,
         request_label=request_label,
         request_keys=request_keys,
         retrieved=retrieved,
         draft_json=json.dumps(draft, indent=2),
+        # The content type's own schema — the verdict schema alone leaves
+        # `corrected_item` untyped, and _validate() below rejects (and thus
+        # loses) any corrected item whose fields drifted.
+        item_schema_json=item_model.model_json_schema(),
         verdict_schema_json=CriticVerdict.model_json_schema(),
     )
     raw = _complete(client, prompts.CRITIC_SYSTEM, prompt)

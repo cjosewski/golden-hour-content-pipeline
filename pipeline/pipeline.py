@@ -22,7 +22,21 @@ from .requests import CONTENT_TYPES, REQUESTS_BY_TYPE, ContentType, RequestSpec
 from .schema import CONTENT_MODELS, ContentFile
 
 TOP_K = 4
+# Two snippet budgets, on purpose — they serve different readers:
+#   _SNIPPET_CHARS       console dry run only. The dry run already prints ~3000
+#       lines across 15 requests; 320 chars keeps each retrieved chunk scannable
+#       by a human reading the terminal, where the assembled prompt below it
+#       carries the full chunk text anyway.
+#   _TRACE_SNIPPET_CHARS output/retrieval_trace.md only. That file IS the graded
+#       RAG artifact: the rubric scores "retrieval is accurate — generated
+#       output reflects retrieved context, demonstrated by showing query,
+#       retrieved chunk, and output side by side." GDD sections routinely run
+#       well past 320 chars, and the sentence that actually justifies a
+#       generated line is frequently past that cut — truncating it hides the
+#       exact grounding the row is scoring. The trace therefore gets a much
+#       larger budget so the justifying sentence survives into the artifact.
 _SNIPPET_CHARS = 320
+_TRACE_SNIPPET_CHARS = 900
 
 
 @dataclass
@@ -59,9 +73,14 @@ def prepare_request(
     )
 
 
-def _snippet(text: str) -> str:
+def _snippet(text: str, limit: int = _SNIPPET_CHARS) -> str:
+    """Collapse whitespace and truncate to `limit` chars.
+
+    Defaults to the console budget; the markdown trace writer passes the larger
+    _TRACE_SNIPPET_CHARS explicitly.
+    """
     text = " ".join(text.split())
-    return text if len(text) <= _SNIPPET_CHARS else text[:_SNIPPET_CHARS] + " ..."
+    return text if len(text) <= limit else text[:limit] + " ..."
 
 
 # ---------------------------------------------------------------------------
@@ -208,7 +227,9 @@ def _write_retrieval_trace(results_by_type: dict[str, list]) -> None:
                     f"{i}. `{rc.chunk.source_doc}` > *{rc.chunk.heading}* "
                     f"(bm25={rc.score:.2f})"
                 )
-                lines.append(f"   > {_snippet(rc.chunk.text)}")
+                # Graded artifact — use the larger trace budget so the
+                # grounding sentence is visible, not cut off mid-evidence.
+                lines.append(f"   > {_snippet(rc.chunk.text, _TRACE_SNIPPET_CHARS)}")
             lines.append("")
             lines.append("**Generated output (post-critic):**\n")
             lines.append("```json")

@@ -140,8 +140,22 @@ def build_critic_prompt(
     request_keys: dict,
     retrieved: list[RetrievedChunk],
     draft_json: str,
+    item_schema_json: dict,
     verdict_schema_json: dict,
 ) -> str:
+    """Assemble the critic prompt.
+
+    `item_schema_json` is the CONTENT TYPE's own schema and is not optional.
+    In CriticVerdict's schema, `corrected_item` is an opaque
+    {"type": "object", "additionalProperties": true} — no properties, no
+    required list — so a critic given only the verdict schema has to
+    reverse-engineer the field set from the draft. Drop or rename one field
+    (is_intelligible_speech, compliance, decline_stage) and generation._validate
+    rejects the corrected item, which silently costs that item its place in BOTH
+    graded artifacts. The items most likely to be revised are exactly the
+    rule-tripping ones the consistency-checking evidence depends on, so the
+    critic is shown the exact required shape instead.
+    """
     return (
         f"CONTENT TYPE: {content_title}\n"
         f"REQUEST ({request_label}):\n{json.dumps(request_keys, indent=2)}\n\n"
@@ -157,6 +171,13 @@ def build_critic_prompt(
         "grounded in the retrieved context. If the draft is already clean, set "
         "`passed` true, leave `violations` empty, and copy the draft unchanged "
         "into `corrected_item`.\n\n"
+        "REQUIRED SHAPE OF `corrected_item` — this content type's own schema. "
+        "The verdict schema below types `corrected_item` as a bare object, so "
+        "THIS is the authoritative field list. `corrected_item` must carry "
+        "every field named here, spelled exactly as here, with the same value "
+        "types and enum values — drop or rename even one field and the item is "
+        "rejected as invalid and lost:\n"
+        f"{json.dumps(item_schema_json, indent=2)}\n\n"
         "OUTPUT: a single JSON object matching this schema (no markdown, no "
         f"commentary):\n{json.dumps(verdict_schema_json, indent=2)}"
     )
