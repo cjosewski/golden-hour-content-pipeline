@@ -1,0 +1,31 @@
+flowchart TD
+    KB[("knowledge_base/*.md<br/>(8 Golden Hour GDD docs,<br/>copied in — self-contained)")]
+    REQ["requests.py<br/>(POC injury x state<br/>request specs)"]
+
+    subgraph RET["Retrieval — BM25, offline (retrieval.py)"]
+        CHUNK["chunk_markdown<br/>(split on headings,<br/>keep source_doc + heading)"]
+        INDEX["BM25Okapi index<br/>(196 section chunks)"]
+        QUERY["build_query<br/>(content-type terms +<br/>injury/state keys)"]
+        TOPK["retrieve top-k chunks<br/>(with provenance + score)"]
+        CHUNK --> INDEX
+        QUERY --> TOPK
+        INDEX --> TOPK
+    end
+
+    subgraph GEN["Generate + critique (generation.py)"]
+        G["Generator role<br/>(anthropic SDK)<br/>draft from retrieved chunks<br/>+ request keys only"]
+        C["Critic role<br/>(anthropic SDK)<br/>checks 8 consistency rules,<br/>returns violations + fix"]
+        G -->|"candidate item"| C
+    end
+
+    KB --> CHUNK
+    REQ --> QUERY
+    REQ --> G
+    TOPK -->|"grounded context"| G
+    TOPK -->|"ground truth to check against"| C
+
+    C -->|"corrected item"| OUT[("output/*.json<br/>(pain_barks,<br/>command_responses,<br/>ambient_decline)")]
+    C -->|"draft + violations + fix"| CLOG[("output/critic_log.md")]
+    TOPK -->|"query + chunks + output"| RTRACE[("output/retrieval_trace.md")]
+
+    OUT --> GAME["Golden Hour (UE 5.8)<br/>casualty-voice content:<br/>barks, command responses,<br/>ambient decline lines"]

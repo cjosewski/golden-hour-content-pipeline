@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+venv/
+
+# Secrets — the API key lives in the environment or an untracked .env,
+# never in git
+.env
+
+# Generated run artifacts. The offline half (retrieval self-test + --no-llm
+# dry run) is fully reproducible from source without a key, so the generated
+# output/*.json content files and the live-run traces are NOT committed — they
+# require an ANTHROPIC_API_KEY this environment does not have. A real run
+# regenerates them. Sample outputs may be committed later as grading evidence
+# by removing the lines below.
+output/*.json
+output/retrieval_trace.md
+output/critic_log.md
+
+# OMC assistant scratch state
+.omc/
