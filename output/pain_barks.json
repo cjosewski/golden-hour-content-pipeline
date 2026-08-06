@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1.0",
+  "game": "Golden Hour",
+  "content_type": "pain_barks",
+  "items": [
+    {
+      "injury_type": "external hemorrhage",
+      "severity": "severe",
+      "consciousness": "conscious",
+      "respiratory_status": "normal",
+      "affect": "fearful",
+      "is_intelligible_speech": true,
+      "vocalization": "Oh God—there's so much blood—please, I need help!",
+      "trigger": "Hemorrhage rate crosses severe threshold while casualty remains conscious with normal respiratory function; fear appraisal active",
+      "physiology_trace": "hemorrhage rate"
+    },
+    {
+      "injury_type": "tension pneumothorax",
+      "severity": "critical",
+      "consciousness": "conscious",
+      "respiratory_status": "distress",
+      "affect": "panicked",
+      "is_intelligible_speech": true,
+      "vocalization": "I can't—I can't breathe!",
+      "trigger": "Repeating bark during critical tension pneumothorax with respiratory distress, before needle decompression intervention",
+      "physiology_trace": "Respiration rate, SpO2, intrathoracic pressure (tension pneumothorax pathology modeled by Pulse)"
+    },
+    {
+      "injury_type": "airway obstruction",
+      "severity": "severe",
+      "consciousness": "conscious",
+      "respiratory_status": "obstructed",
+      "affect": "distressed",
+      "is_intelligible_speech": false,
+      "vocalization": "[harsh inspiratory stridor with panicked catch on each breath]",
+      "trigger": "Idle/ambient bark during severe airway obstruction while conscious and distressed, before any airway adjunct intervention",
+      "physiology_trace": "Airway resistance/obstruction level; respiration rate; level of consciousness"
+    },
+    {
+      "injury_type": "external hemorrhage",
+      "severity": "critical",
+      "consciousness": "unconscious",
+      "respiratory_status": "normal",
+      "affect": "unresponsive",
+      "is_intelligible_speech": false,
+      "vocalization": "[no vocalization — silent except for shallow breathing]",
+      "trigger": "Hard-override rule: level of consciousness below unconsciousness threshold forces Unconscious output state, suppressing vocalization entirely regardless of injury or hemorrhage severity",
+      "physiology_trace": "level of consciousness (Stage 1 physiological input, read from Pulse Physiology Integration); bypasses Stage 4–6 appraisal/coping path per hard-override rule and drives Stage 7 output directly to suppress vocalization cue"
+    },
+    {
+      "injury_type": "minor injury",
+      "severity": "minor",
+      "consciousness": "conscious",
+      "respiratory_status": "normal",
+      "affect": "stoic",
+      "is_intelligible_speech": true,
+      "vocalization": "I can walk. It's not bad.",
+      "trigger": "Trainee approaches during global sort or begins individual assessment on a Green-category casualty with stoic appraisal/coping policy",
+      "physiology_trace": "pain_total (low magnitude, 0.0–0.3 range, driven primarily by minor injury severity with minimal pain_acute spike) and consciousness/LOC (fully conscious, obeys_commands_or_purposeful_movement = true)"
+    }
+  ]
+}

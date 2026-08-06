@@ -1,0 +1,67 @@
+{
+  "schema_version": "0.1.0",
+  "game": "Golden Hour",
+  "content_type": "command_responses",
+  "items": [
+    {
+      "command": "If you can hear me and need help, walk to me",
+      "injury_type": "minor injury",
+      "consciousness": "conscious",
+      "can_hear": true,
+      "mobility": "ambulatory",
+      "affect": "frightened but cooperative",
+      "compliance": "verbal-and-moves",
+      "response": "\"Okay—I'm coming!\" [begins walking quickly toward the trainee's position, favoring one side but maintaining balance]",
+      "trigger": "walk-to-me command + conscious + can_hear=true + ambulatory",
+      "physiology_trace": "Consciousness=conscious (can process command), hearing capability=true (receives audio input), mobility state=ambulatory (ground-truth physiology supports ambulation per Casualty Model)"
+    },
+    {
+      "command": "Wave your arm or make a purposeful movement",
+      "injury_type": "external hemorrhage",
+      "consciousness": "conscious",
+      "can_hear": true,
+      "mobility": "still",
+      "affect": "weak, pleading",
+      "compliance": "verbal-acknowledgement-no-move",
+      "response": "\"I— I can't… please, I'm hurt…\" [remains still, does not attempt movement]",
+      "trigger": "SALT Step 1 global-sort command (wave/purposeful-movement) + conscious + can_hear=true + mobility=still",
+      "physiology_trace": "Consciousness=conscious gates awareness of command; can_hear=true gates auditory reception; mobility=still (ground-truth physiology state from Pulse) prevents compliance with movement request despite hearing and understanding it — this casualty is assessed FIRST per SALT global-sort rule (still = tier-1 assessment priority)"
+    },
+    {
+      "command": "If you can hear me, wave your hand",
+      "injury_type": "tension pneumothorax",
+      "consciousness": "unconscious",
+      "can_hear": false,
+      "mobility": "still",
+      "affect": "unresponsive",
+      "compliance": "no-response",
+      "response": "[no response — remains still]",
+      "trigger": "wave/purposeful-movement command + unconscious + cannot hear",
+      "physiology_trace": "Level of consciousness (unconscious) and hearing capability (false) gate all compliance; mobility state (still) reflects inability to perform purposeful movement. Per SALT global sort (Core Rules Rule 1), casualties who do not respond to voice commands are assessed first."
+    },
+    {
+      "command": "Move to the flag if you can walk",
+      "injury_type": "minor injury",
+      "consciousness": "conscious",
+      "can_hear": false,
+      "mobility": "ambulatory",
+      "affect": "confused, straining to understand",
+      "compliance": "no-response",
+      "response": "[no response — remains still, eyes scanning the trainee's face and lips with visible confusion; head tilted slightly as if straining to parse meaning from visual cues alone]",
+      "trigger": "ambulatory-walk command + conscious + deaf",
+      "physiology_trace": "hearing capability = false (gates compliance per Pillar 5 design test; consciousness and mobility are present but insufficient without hearing to process spoken command)"
+    },
+    {
+      "command": "Squeeze my hand if you can hear me",
+      "injury_type": "open/sucking chest wound",
+      "consciousness": "altered",
+      "can_hear": true,
+      "mobility": "purposeful-movement",
+      "affect": "confused",
+      "compliance": "non-verbal-movement",
+      "response": "[Squeezes weakly, then releases — hand drops back to chest. Eyes are open but unfocused; does not track the trainee's face.]",
+      "trigger": "squeeze-my-hand command + altered consciousness + hearing intact + purposeful-movement capable",
+      "physiology_trace": "Pulse Physiology Engine consciousness/LOC output (altered, capable of purposeful movement per obeys_commands_or_purposeful_movement SALT question a); hearing capability true; open/sucking chest wound drives respiratory effort but does not block motor compliance"
+    }
+  ]
+}

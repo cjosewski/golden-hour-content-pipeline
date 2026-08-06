@@ -1,0 +1,62 @@
+{
+  "schema_version": "0.1.0",
+  "game": "Golden Hour",
+  "content_type": "ambient_decline",
+  "items": [
+    {
+      "injury_type": "external hemorrhage",
+      "decline_stage": "early",
+      "consciousness": "conscious",
+      "respiratory_status": "normal",
+      "affect": "anxious but lucid",
+      "is_intelligible_speech": true,
+      "vocalization": "I'm bleeding... it won't stop. Am I going to be okay?",
+      "trigger": "Homeostasis state transitions to Compensating; hemorrhage rate remains elevated while MAP stays within defended range; Stage 4 distress scalar crosses notable threshold",
+      "physiology_trace": "Shock probability crossing threshold (Stage 2 derived feature) driven by active hemorrhage rate and rising heart rate (Stage 1); MAP trend slope beginning negative deflection but MAP absolute value still within compensated range; perfusion index declining but above Decompensating threshold"
+    },
+    {
+      "injury_type": "external hemorrhage",
+      "decline_stage": "mid",
+      "consciousness": "altered",
+      "respiratory_status": "normal",
+      "affect": "confused, agitated",
+      "is_intelligible_speech": true,
+      "vocalization": "\"Cold... why's it... I need— where... what's...?\"",
+      "trigger": "Homeostasis state = Compensating; consciousness level declining into altered range; no trainee interaction for >15 seconds",
+      "physiology_trace": "Mean arterial pressure (MAP) trend slope falling while body compensates; perfusion index dropping below baseline; consciousness level (LOC) declining from conscious threshold toward altered range; shock probability crossing Compensating threshold"
+    },
+    {
+      "injury_type": "tension pneumothorax",
+      "decline_stage": "mid",
+      "consciousness": "altered",
+      "respiratory_status": "distress",
+      "affect": "air-hungry, frightened",
+      "is_intelligible_speech": false,
+      "vocalization": "Gasping breaths punctuated by fragmentary confused speech: \"Can't... where... I can't...\" — words clipped short by air hunger, each phrase breaking into a grunt or whimper mid-attempt",
+      "trigger": "Altered consciousness onset with persistent respiratory distress; casualty no longer tracking trainee movement or environment coherently",
+      "physiology_trace": "SpO2 declining below 85% as untreated tension pneumothorax collapses lung volume and impairs oxygenation; altered mental status reflects cerebral hypoxia from falling arterial oxygen saturation"
+    },
+    {
+      "injury_type": "open/sucking chest wound",
+      "decline_stage": "late",
+      "consciousness": "unconscious",
+      "respiratory_status": "distress",
+      "affect": "fading",
+      "is_intelligible_speech": false,
+      "vocalization": "Shallow, wet gurgling breaths becoming increasingly irregular, separated by lengthening pauses; faint respiratory effort with diminishing air movement",
+      "trigger": "Unconscious casualty with untreated open/sucking chest wound continuing to deteriorate; no chest seal applied, progressive respiratory failure",
+      "physiology_trace": "SpO2 critically low (<70%), respiratory rate falling toward agonal pattern, perfusion index dropping as hypoxia-driven cardiovascular collapse progresses"
+    },
+    {
+      "injury_type": "airway obstruction",
+      "decline_stage": "late",
+      "consciousness": "unconscious",
+      "respiratory_status": "obstructed",
+      "affect": "agonal",
+      "is_intelligible_speech": false,
+      "vocalization": "Faint stridor—barely audible breath sounds against full obstruction—then silence",
+      "trigger": "Level of consciousness drops below unconsciousness threshold (Stage 1 physiological input) while airway remains obstructed; arrest flag not yet set but perfusion index critically low",
+      "physiology_trace": "Level of consciousness (LOC) below unconsciousness threshold + SpO2 critically low (approaching arrest) + perfusion index critically degraded. Per the Hard-override rule (casualty-facial-animation.md Core Rules), LOC below unconsciousness threshold forces the Unconscious output state, suppressing vocalization and gaze. The obstruction prevents gas exchange; falling SpO2 drives shock probability and fear (Stage 4 appraisal) before consciousness is lost, but once unconscious the appraisal/coping path is bypassed entirely. The faint stridor represents the final involuntary respiratory effort against complete obstruction before the system enters arrest."
+    }
+  ]
+}
