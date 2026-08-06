@@ -24,6 +24,10 @@ class ContentType:
     model_name: str  # schema.CONTENT_MODELS key (same as `key`)
     output_filename: str
     # Anchor terms mixed into every retrieval query for this content type.
+    # Kept deliberately SHORT: these are identical across every request in the
+    # type, so long anchor lists dominate BM25 and flatten the per-request
+    # signal. Terms that duplicate a request key (respiratory, consciousness,
+    # SpO2, ...) are especially harmful here and are left to the keys.
     retrieval_terms: list[str]
     # One-line brief handed to the generator role.
     generator_brief: str
@@ -40,9 +44,26 @@ class RequestSpec:
     extra_terms: list[str] = field(default_factory=list)
 
     def query_terms(self) -> list[str]:
-        """Key values + extra terms, as retrieval query tokens."""
-        values = [str(v) for v in self.keys.values() if isinstance(v, (str, int))]
-        return [*values, *self.extra_terms]
+        """Key values + extra terms, as retrieval query tokens.
+
+        Two subtleties, both load-bearing for retrieval quality:
+
+        1. `bool` subclasses `int`, so a bare `isinstance(v, int)` would let
+           `can_hear: True` leak the meaningless token "true" into the query.
+           The explicit bool guard drops it.
+        2. The per-request terms are emitted TWICE. BM25 scores by term
+           frequency, and the content-type anchor terms are identical across
+           every request in a type — without this weighting the shared
+           boilerplate dominates the score and structurally different requests
+           retrieve byte-identical chunk sets.
+        """
+        values = [
+            str(v)
+            for v in self.keys.values()
+            if isinstance(v, str) or (isinstance(v, int) and not isinstance(v, bool))
+        ]
+        terms = [*values, *self.extra_terms]
+        return [*terms, *terms]
 
 
 CONTENT_TYPES: dict[str, ContentType] = {
@@ -51,15 +72,7 @@ CONTENT_TYPES: dict[str, ContentType] = {
         title="Pain / plea barks",
         model_name="pain_barks",
         output_filename="pain_barks.json",
-        retrieval_terms=[
-            "casualty",
-            "vocalization",
-            "pain",
-            "breathing",
-            "respiratory",
-            "distress",
-            "consciousness",
-        ],
+        retrieval_terms=["casualty", "vocalization", "pain"],
         generator_brief=(
             "Author one short pain/plea bark a wounded casualty emits, keyed "
             "by injury_type x severity x consciousness x respiratory_status x "
@@ -71,15 +84,7 @@ CONTENT_TYPES: dict[str, ContentType] = {
         title="Command-response lines",
         model_name="command_responses",
         output_filename="command_responses.json",
-        retrieval_terms=[
-            "voice command",
-            "SALT global sort",
-            "walk wave still",
-            "compliance",
-            "hearing",
-            "mobility",
-            "consciousness",
-        ],
+        retrieval_terms=["voice command", "SALT global sort", "compliance"],
         generator_brief=(
             "Author what a casualty says and/or does when the trainee issues a "
             "voice command. Compliance gates on consciousness AND hearing AND "
@@ -91,15 +96,7 @@ CONTENT_TYPES: dict[str, ContentType] = {
         title="Ambient decline vocalizations",
         model_name="ambient_decline",
         output_filename="ambient_decline.json",
-        retrieval_terms=[
-            "casualty",
-            "vocalization",
-            "physiology decay",
-            "SpO2",
-            "perfusion",
-            "level of consciousness",
-            "deterioration",
-        ],
+        retrieval_terms=["casualty", "vocalization", "deterioration"],
         generator_brief=(
             "Author a non-command idle vocalization that tracks physiology "
             "decay over time. early = coherent complaint; mid = "
@@ -284,7 +281,15 @@ AMBIENT_DECLINE_REQUESTS: list[RequestSpec] = [
             "respiratory_status": "distress",
             "affect": "air-hungry, frightened",
         },
-        extra_terms=["SpO2", "hypoxia", "respiration rate"],
+        extra_terms=[
+            "SpO2",
+            "hypoxia",
+            "respiration rate",
+            "tension pneumothorax",
+            "needle decompression",
+            "compensating",
+            "agitation",
+        ],
     ),
     RequestSpec(
         content_type="ambient_decline",
@@ -296,7 +301,14 @@ AMBIENT_DECLINE_REQUESTS: list[RequestSpec] = [
             "respiratory_status": "distress",
             "affect": "fading",
         },
-        extra_terms=["falling SpO2", "level of consciousness", "quiet moan"],
+        extra_terms=[
+            "falling SpO2",
+            "level of consciousness",
+            "quiet moan",
+            "open sucking chest wound",
+            "chest seal",
+            "unconscious vocalization suppressed",
+        ],
     ),
     RequestSpec(
         content_type="ambient_decline",

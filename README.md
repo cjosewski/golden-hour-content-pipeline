@@ -193,16 +193,36 @@ Notes:
 >   moan) and explain why the correction is right.
 > - **Weakest line + why**: name one generated line that still feels off and
 >   what rule or tuning would fix it.
+> - **A concrete prompt/retrieval tweak you made to improve game-fit** (the
+>   rubric asks for at least one). Two real ones are already in the repo,
+>   with observable before/after — describe whichever you prefer, or add your
+>   own after the run:
+>   1. **Prompt tweak — moved the 8-rule consistency list out of the generator
+>      prompt, leaving it only in the critic** (`pipeline/prompts.py`).
+>      Originally both roles got the rules; the generator self-censored, so
+>      the critic had nothing to catch and `critic_log.md` came back with
+>      every item marked clean — the consistency-checking evidence was empty.
+>      With the rules critic-only, the unconscious / respiratory-distress /
+>      conscious-but-deaf requests are genuine traps again and the log shows
+>      real catches.
+>   2. **Retrieval tweak — trimmed the shared per-content-type anchor terms
+>      and doubled the weight of the per-request key terms**
+>      (`pipeline/requests.py`). The ~7-term anchor phrase prepended to every
+>      query dominated BM25, and two structurally different `ambient_decline`
+>      requests were retrieving a byte-identical top-4. After the change all
+>      15 requests retrieve a distinct chunk set.
 
 ## What is verified vs. not
 
 - **Verified offline (no API key):** `uv sync` on pinned Python 3.13; the
-  retrieval self-test (3/3 queries hit their expected doc); the `--no-llm` dry
-  run for all three content types; every module imports cleanly; the JSON
+  retrieval self-test (3/3 queries rank their expected doc #1); the `--no-llm`
+  dry run for all three content types, with no two requests in any content type
+  retrieving an identical chunk set; every module imports cleanly; the JSON
   extractor and the fail-fast no-key guard.
 - **Not verified here:** the live Anthropic generation (generator + critic
   calls) — there is no API key in the build environment. That code is written,
-  type-checked, and import-clean, but running it requires a key. Run
+  syntax-checked (`compileall`), and import-clean, but running it requires a
+  key. Run
   `uv run python -m pipeline` with a valid `ANTHROPIC_API_KEY` to produce the
   `output/*.json` content files and the two trace files, then complete the
   Voice Judgment section above.

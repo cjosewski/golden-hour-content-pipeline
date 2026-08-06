@@ -6,6 +6,13 @@ explicit rule list, returns the violations, and emits a corrected item. The
 rules are strict on purpose: several request states (unconscious, respiratory
 distress, conscious-but-deaf) make a naive draft break a rule, so the critic
 reliably has something to catch on a live run.
+
+DELIBERATE: CONSISTENCY_RULES is injected into the CRITIC prompt only, never
+into the generator prompt. Pre-briefing the generator on the whole checklist
+made it self-censor, so the critic caught nothing and the consistency-checking
+evidence in output/critic_log.md came back empty. The generator works from the
+retrieved context alone; catching rule breaks is the critic's job. Do not
+"helpfully" add format_rules() back into build_generator_prompt().
 """
 
 from __future__ import annotations
@@ -118,13 +125,11 @@ def build_generator_prompt(
         f"{json.dumps(request_keys, indent=2)}\n\n"
         "RETRIEVED GDD CONTEXT (your only source of game facts — ground every "
         f"detail in this):\n{format_chunks(retrieved)}\n\n"
-        "HARD RULES you must satisfy:\n"
-        f"{format_rules()}\n\n"
         "OUTPUT: a single JSON object matching this schema (no markdown, no "
         f"commentary):\n{json.dumps(schema_json, indent=2)}\n\n"
         "Fill the request keys into their matching fields verbatim, then "
-        "author the vocalization/response, trigger, and physiology_trace so "
-        "they obey every rule above."
+        "author the vocalization/response, trigger, and physiology_trace "
+        "grounded in the retrieved context."
     )
 
 

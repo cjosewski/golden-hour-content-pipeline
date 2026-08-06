@@ -1,8 +1,11 @@
 """Offline retrieval self-test.
 
 Runs three known queries against the real knowledge base and asserts the
-expected source document appears in the top results. Proves the RAG retrieval
-half works end to end with no API key. Exit code 0 = pass, 1 = fail.
+expected source document is the TOP-RANKED result for each. Proves the RAG
+retrieval half works end to end with no API key. Exit code 0 = pass, 1 = fail.
+
+The assertion is rank-1, not top-k membership, so the test's claim matches
+what it actually enforces. The full top-k is still printed for diagnostics.
 
 Run standalone:  uv run python -m pipeline.selftest
 """
@@ -21,7 +24,7 @@ _TOP_K = 3
 class RetrievalCase:
     name: str
     query: str
-    expected_doc: str  # must appear among the top-_TOP_K retrieved chunks
+    expected_doc: str  # must be the source doc of the RANK-1 retrieved chunk
 
 
 # Each query uses vocabulary that most distinctively belongs to one GDD doc.
@@ -56,12 +59,14 @@ def run_selftest(top_k: int = _TOP_K) -> bool:
     for case in CASES:
         retrieved = kb.retrieve(case.query, top_k=top_k)
         docs = [rc.chunk.source_doc for rc in retrieved]
-        passed = case.expected_doc in docs
+        # Rank-1 assertion: the top-scoring chunk must come from the expected
+        # document, not merely appear somewhere in the top-k.
+        passed = bool(docs) and docs[0] == case.expected_doc
         all_passed = all_passed and passed
         mark = "PASS" if passed else "FAIL"
         print(f"[{mark}] {case.name}")
         print(f"       query: {case.query}")
-        print(f"       expected doc in top {top_k}: {case.expected_doc}")
+        print(f"       expected doc at RANK 1: {case.expected_doc}")
         for i, rc in enumerate(retrieved, 1):
             hit = " <-- expected" if rc.chunk.source_doc == case.expected_doc else ""
             print(f"         {i}. [{rc.score:6.2f}] {rc.chunk.source_doc} > "

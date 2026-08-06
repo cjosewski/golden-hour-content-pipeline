@@ -13,15 +13,10 @@ venv/
 # never in git
 .env
 
-# Generated run artifacts. The offline half (retrieval self-test + --no-llm
-# dry run) is fully reproducible from source without a key, so the generated
-# output/*.json content files and the live-run traces are NOT committed — they
-# require an ANTHROPIC_API_KEY this environment does not have. A real run
-# regenerates them. Sample outputs may be committed later as grading evidence
-# by removing the lines below.
-output/*.json
-output/retrieval_trace.md
-output/critic_log.md
+# NOTE: output/ is deliberately NOT ignored. output/retrieval_trace.md and
+# output/critic_log.md ARE the graded evidence for RAG Implementation and
+# Consistency Checking — after a live run they must be committable, so nothing
+# under output/ is excluded here.
 
 # OMC assistant scratch state
 .omc/

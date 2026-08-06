@@ -116,29 +116,41 @@ def run_live(top_k: int = TOP_K) -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     results_by_type: dict[str, list[ItemResult]] = {}
+    failures: list[str] = []
     for ct_key, content_type in CONTENT_TYPES.items():
         print(f"\n=== Generating: {content_type.title} ({ct_key}) ===")
         results: list[ItemResult] = []
         for request in REQUESTS_BY_TYPE[ct_key]:
-            prepared = prepare_request(kb, content_type, request, top_k)
             print(f"  - {request.label}")
-            draft = generate_item(
-                client,
-                content_type=ct_key,
-                generator_brief=content_type.generator_brief,
-                request_label=request.label,
-                request_keys=request.keys,
-                retrieved=prepared.retrieved,
-            )
-            verdict = critique_item(
-                client,
-                content_type=ct_key,
-                content_title=content_type.title,
-                request_label=request.label,
-                request_keys=request.keys,
-                retrieved=prepared.retrieved,
-                draft=draft,
-            )
+            # Per-item fault tolerance: a live run makes ~30 sequential API
+            # calls, and a single transient 429/529, dropped connection,
+            # malformed-JSON completion, or schema-validation failure must not
+            # destroy the whole run — the two trace files are only written
+            # after every content type finishes. Log the item, skip it, keep
+            # going: 14/15 items plus complete traces beats 0 items.
+            try:
+                prepared = prepare_request(kb, content_type, request, top_k)
+                draft = generate_item(
+                    client,
+                    content_type=ct_key,
+                    generator_brief=content_type.generator_brief,
+                    request_label=request.label,
+                    request_keys=request.keys,
+                    retrieved=prepared.retrieved,
+                )
+                verdict = critique_item(
+                    client,
+                    content_type=ct_key,
+                    content_title=content_type.title,
+                    request_label=request.label,
+                    request_keys=request.keys,
+                    retrieved=prepared.retrieved,
+                    draft=draft,
+                )
+            except Exception as exc:
+                failures.append(f"{ct_key} / {request.label}: {exc}")
+                print(f"      SKIPPED — {type(exc).__name__}: {exc}")
+                continue
             status = "clean" if verdict.passed else f"{len(verdict.violations)} fix(es)"
             print(f"      critic: {status}")
             results.append(
@@ -158,7 +170,7 @@ def run_live(top_k: int = TOP_K) -> None:
 
     _write_retrieval_trace(results_by_type)
     _write_critic_log(results_by_type)
-    _print_summary(results_by_type)
+    _print_summary(results_by_type, failures)
 
 
 def _write_content_file(content_type: ContentType, results: list) -> None:
@@ -250,11 +262,16 @@ def _write_trace(name: str, lines: list[str]) -> None:
     print(f"  wrote {path.relative_to(OUTPUT_DIR.parent)}")
 
 
-def _print_summary(results_by_type: dict[str, list]) -> None:
+def _print_summary(results_by_type: dict[str, list], failures: list[str]) -> None:
     print("\n" + "=" * 60)
     print("RUN COMPLETE")
     for ct_key, results in results_by_type.items():
         revised = sum(1 for r in results if not r.verdict.passed)
         print(f"  {ct_key}: {len(results)} items, {revised} revised by critic")
+    if failures:
+        print(f"\n  {len(failures)} item(s) SKIPPED after an error:")
+        for failure in failures:
+            print(f"    - {failure}")
+        print("  Re-run to retry them; the artifacts below cover what succeeded.")
     print(f"Artifacts in {OUTPUT_DIR}")
     print("=" * 60)
